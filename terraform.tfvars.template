@@ -1,0 +1,5 @@
+pm_api_token_id     = "puttokenIDinhere"
+pm_api_token_secret = "putapisecretinhere"
+ssh_public_key      = "sshkey in here"
+vm_count    = 4
+user_prefix = "jblanch" #vm name prefix in proxmox
