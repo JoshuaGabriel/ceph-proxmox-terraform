@@ -1,0 +1,21 @@
+---
+- hosts: cluster_nodes
+  remote_user: debian
+  become: yes
+  tasks:
+    - name: Ensure root .ssh directory exists
+      file:
+        path: /root/.ssh
+        state: directory
+        mode: '0700'
+        owner: root
+        group: root
+
+    - name: Copy SSH keys to root
+      copy:
+        src: /home/debian/.ssh/authorized_keys
+        dest: /root/.ssh/authorized_keys
+        remote_src: yes
+        mode: '0600'
+        owner: root
+        group: root

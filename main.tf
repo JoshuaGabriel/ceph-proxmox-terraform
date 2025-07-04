@@ -8,7 +8,6 @@ terraform {
   }
 }
 
-# Configure the Proxmox Provider
 provider "proxmox" {
   pm_api_url          = "https://10.0.0.19:8006/api2/json"
   pm_api_token_id     = var.pm_api_token_id
@@ -16,7 +15,6 @@ provider "proxmox" {
   pm_tls_insecure     = true
 }
 
-# Variables for sensitive data
 variable "pm_api_token_id" {
   description = "Proxmox API token ID (format: user@realm!token-name)"
   type        = string
@@ -47,62 +45,160 @@ variable "user_prefix" {
   default     = "user"
 }
 
-# VM hostnames
-locals {
-  vm_names = [for i in range(var.vm_count) : "${var.user_prefix}-node-${format("%02d", i + 1)}"]
+variable "vm_configs" {
+  description = "VM configuration profiles"
+  type = map(object({
+    cores  = number
+    memory = number
+    disks = list(object({
+      size    = string
+      storage = string
+      type    = string
+    }))
+  }))
+  default = {
+    standard = {
+      cores  = 2
+      memory = 2048
+      disks = [
+        {
+          size    = "50G"
+          storage = "local-lvm"
+          type    = "system"
+        }
+      ]
+    }
+    waldb = {
+      cores  = 4
+      memory = 8192
+      disks = [
+        {
+          size    = "50G"
+          storage = "local-lvm"
+          type    = "system"
+        },
+        {
+          size    = "500G"
+          storage = "local-lvm"
+          type    = "data"
+        },
+        {
+          size    = "500G"
+          storage = "local-lvm"
+          type    = "data"
+        },
+        {
+          size    = "500G"
+          storage = "local-ssd"
+          type    = "data"
+        }
+      ]
+    }
+    normal = {
+      cores  = 4
+      memory = 8192
+      disks = [
+        {
+          size    = "50G"
+          storage = "local-lvm"
+          type    = "system"
+        },
+        {
+          size    = "500G"
+          storage = "local-lvm"
+          type    = "data"
+        },
+        {
+          size    = "500G"
+          storage = "local-lvm"
+          type    = "data"
+        },
+        {
+          size    = "500G"
+          storage = "local-lvm"
+          type    = "data"
+        }
+      ]
+    }
+  }
 }
 
-# Create VMs
+variable "vm_profile" {
+  description = "VM profile to use (standard, waldb, normal)"
+  type        = string
+  default     = "standard"
+  validation {
+    condition     = contains(["standard", "waldb", "normal"], var.vm_profile)
+    error_message = "VM profile must be one of: standard, waldb, normal."
+  }
+}
+
+locals {
+  vm_names = [for i in range(var.vm_count) : "${var.user_prefix}-node-${format("%02d", i + 1)}"]
+  selected_config = var.vm_configs[var.vm_profile]
+}
+
 resource "proxmox_vm_qemu" "cluster_nodes" {
   count = var.vm_count
   
-  # Basic VM settings
   name        = local.vm_names[count.index]
   target_node = "pve"
   clone       = "ceph-test"
   
-  # VM specifications
   cpu {
-    cores   = 2
+    cores   = local.selected_config.cores
     sockets = 1
   }
-  memory = 2048  # 2GiB in MB
+  memory = local.selected_config.memory
   
-  # Network configuration
   network {
     id     = 0
     model  = "virtio"
     bridge = "vmbr0"
   }
   
-  # Cloud-init configuration
   os_type = "cloud-init"
-  
-  # SSH key injection
   sshkeys = var.ssh_public_key
-  
-  # Cloud-init user
   ciuser = "debian"
-  
-  # Use DHCP for automatic IP assignment
   ipconfig0 = "ip=dhcp"
-  
-  # Enable QEMU guest agent to get IP addresses
   agent = 1
   
-  # Disk configuration with cloud-init
   disks {
     scsi {
       scsi0 {
         disk {
-          size    = "100G"  # Match your template size
+          size    = "100G"
           storage = "local-lvm"
         }
       }
-      scsi1 {
-        disk {
-          size    = "50G"
-          storage = "local-lvm"
+      
+      dynamic "scsi1" {
+        for_each = length(local.selected_config.disks) > 1 ? [local.selected_config.disks[1]] : []
+        content {
+          disk {
+            size    = scsi1.value.size
+            storage = scsi1.value.storage
+          }
+        }
+      }
+      
+      dynamic "scsi2" {
+        for_each = length(local.selected_config.disks) > 2 ? [local.selected_config.disks[2]] : []
+        content {
+          disk {
+            size    = scsi2.value.size
+            storage = scsi2.value.storage
+          }
+        }
+      }
+      
+      dynamic "scsi3" {
+        for_each = length(local.selected_config.disks) > 3 ? [local.selected_config.disks[3]] : []
+        content {
+          disk {
+            size    = scsi3.value.size
+            storage = scsi3.value.storage
+          }
         }
       }
     }
@@ -115,15 +211,11 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
     }
   }
   
-  # Boot settings - match template configuration
   boot = "order=scsi0"
   scsihw = "virtio-scsi-single"
   bios = "ovmf"
-  
-  # Start VM after creation
   automatic_reboot = false
   
-  # Wait for cloud-init to complete
   lifecycle {
     ignore_changes = [
       network,
@@ -131,7 +223,6 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
   }
 }
 
-# Outputs
 output "vm_info" {
   value = {
     for i, vm in proxmox_vm_qemu.cluster_nodes : local.vm_names[i] => {
@@ -142,17 +233,15 @@ output "vm_info" {
   }
 }
 
-# Generate Ansible inventory with DHCP-assigned IPs
 output "ansible_inventory" {
   value = join("\n", concat([
     "[cluster_nodes]"
   ], [
     for i, vm in proxmox_vm_qemu.cluster_nodes : 
-    "${local.vm_names[i]} ansible_host=${vm.default_ipv4_address} ansible_user=debian"
+    "${local.vm_names[i]} ansible_host=${vm.default_ipv4_address}"
   ]))
 }
 
-# Output just the IPs for easy copying
 output "vm_ips" {
   value = [for vm in proxmox_vm_qemu.cluster_nodes : vm.default_ipv4_address]
 }

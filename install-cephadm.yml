@@ -1,0 +1,33 @@
+---
+- hosts: cluster_nodes
+  remote_user: root
+  vars:
+    ceph_release: "19.2.2"
+    cephadm_url: "https://download.ceph.com/rpm-{{ ceph_release }}/el9/noarch/cephadm"
+  tasks:
+    - name: Download cephadm
+      get_url:
+        url: "{{ cephadm_url }}"
+        dest: /usr/local/bin/cephadm
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Verify cephadm is executable
+      command: /usr/local/bin/cephadm --help
+      register: cephadm_help
+      changed_when: false
+
+    - name: Display cephadm version info
+      debug:
+        msg: "cephadm downloaded successfully on {{ inventory_hostname }}"
+
+    - name: Show cephadm location
+      command: which cephadm
+      register: cephadm_location
+      changed_when: false
+      failed_when: false
+
+    - name: Display cephadm location
+      debug:
+        msg: "cephadm location: {{ cephadm_location.stdout if cephadm_location.rc == 0 else '/usr/local/bin/cephadm' }}"

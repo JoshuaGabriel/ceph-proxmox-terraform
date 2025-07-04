@@ -3,3 +3,11 @@ pm_api_token_secret = "putapisecretinhere"
 ssh_public_key      = "sshkey in here"
 vm_count    = 4
 user_prefix = "jblanch" #vm name prefix in proxmox
+vm_profile  = "normal"
+
+# VM Profiles:
+# standard: 2 cores, 2GB RAM, 1 disk (50GB)
+# TODO: waldb:    4 cores, 4GB RAM, 4 disks (50GB system + 3x500GB data, last one on SSD)
+# TODO: normal:   4 cores, 4GB RAM, 4 disks (50GB system + 3x500GB data)
+
+

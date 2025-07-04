@@ -1,0 +1,73 @@
+---
+- hosts: cluster_nodes
+  remote_user: root
+  tasks:
+    - name: Create /etc/ceph directory
+      file:
+        path: /etc/ceph
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Generate SSH key pair for ceph
+      openssh_keypair:
+        path: /etc/ceph/ceph
+        type: rsa
+        size: 2048
+        comment: "ceph-admin@{{ inventory_hostname }}"
+        owner: root
+        group: root
+        mode: '0600'
+      register: ssh_key_result
+
+    - name: Set proper permissions for public key
+      file:
+        path: /etc/ceph/ceph.pub
+        mode: '0644'
+        owner: root
+        group: root
+
+- hosts: cluster_nodes
+  remote_user: root
+  tasks:
+    - name: Get admin host public key content
+      slurp:
+        src: /etc/ceph/ceph.pub
+      register: admin_key_content
+      delegate_to: "{{ groups['cluster_nodes'][0] }}"
+
+    - name: Add admin host key to all other nodes
+      authorized_key:
+        user: root
+        key: "{{ admin_key_content.content | b64decode | trim }}"
+        comment: "ceph-admin from {{ groups['cluster_nodes'][0] }}"
+        state: present
+      when: inventory_hostname != groups['cluster_nodes'][0]
+
+- hosts: "{{ groups['cluster_nodes'][0] }}"
+  remote_user: root
+  tasks:
+    - name: Get list of other hosts with their IPs
+      set_fact:
+        other_hosts: "{{ groups['cluster_nodes'][1:] | map('extract', hostvars, 'ansible_host') | list }}"
+
+    - name: Test SSH connectivity to all other nodes
+      command: ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i /etc/ceph/ceph root@{{ item }} "echo 'SSH connection successful to {{ item }}'"
+      loop: "{{ other_hosts }}"
+      register: ssh_test_results
+      changed_when: false
+
+    - name: Display SSH test results
+      debug:
+        msg: "SSH test to {{ item.item }}: {{ item.stdout }}"
+      loop: "{{ ssh_test_results.results }}"
+      when: ssh_test_results is defined
+
+    - name: Display admin host info
+      debug:
+        msg: |
+          Admin host: {{ inventory_hostname }} ({{ ansible_host }})
+          Other nodes: {{ other_hosts | join(', ') }}
+          SSH key path: /etc/ceph/ceph
+          Public key path: /etc/ceph/ceph.pub
