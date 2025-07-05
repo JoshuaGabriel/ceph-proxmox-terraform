@@ -1,0 +1,35 @@
+---
+- hosts: "{{ groups['cluster_nodes'][0] }}"
+  remote_user: root
+  tasks:
+    - name: Create host.yml content for Ceph cluster
+      set_fact:
+        host_entries: |
+          {% for host in groups['cluster_nodes'] %}
+          service_type: host
+          hostname: {{ host }}
+          addr: {{ hostvars[host]['ansible_host'] }}
+          {% if loop.first %}
+          labels:
+          - _admin
+          {% endif %}
+          {% if not loop.last %}
+          ---
+          {% endif %}
+          {% endfor %}
+
+    - name: Create host.yml file on admin node
+      copy:
+        content: "{{ host_entries }}"
+        dest: /root/host.yml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Display host.yml location
+      debug:
+        msg: "host.yml file created at /root/host.yml on admin node {{ inventory_hostname }}"
+
+    - name: Show host.yml content
+      debug:
+        msg: "{{ host_entries }}" 

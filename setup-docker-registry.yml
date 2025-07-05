@@ -1,0 +1,48 @@
+---
+- hosts: cluster_nodes
+  remote_user: root
+  vars:
+    insecure_registry: "10.0.0.225:5000"
+  tasks:
+    - name: Create /etc/docker directory
+      file:
+        path: /etc/docker
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Configure Docker daemon with insecure registry
+      copy:
+        content: |
+          {
+            "insecure-registries": [
+              "{{ insecure_registry }}"
+            ]
+          }
+        dest: /etc/docker/daemon.json
+        mode: '0644'
+        owner: root
+        group: root
+      notify: restart docker
+
+    - name: Ensure Docker is running
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Verify Docker daemon configuration
+      command: docker info
+      register: docker_info
+      changed_when: false
+
+    - name: Display Docker insecure registries
+      debug:
+        msg: "Docker configured with insecure registry: {{ insecure_registry }}"
+
+  handlers:
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted

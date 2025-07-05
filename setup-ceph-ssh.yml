@@ -52,18 +52,18 @@
       set_fact:
         other_hosts: "{{ groups['cluster_nodes'][1:] | map('extract', hostvars, 'ansible_host') | list }}"
 
-    - name: Test SSH connectivity to all other nodes
-      command: ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i /etc/ceph/ceph root@{{ item }} "echo 'SSH connection successful to {{ item }}'"
-      loop: "{{ other_hosts }}"
-      register: ssh_test_results
-      changed_when: false
-
-    - name: Display SSH test results
-      debug:
-        msg: "SSH test to {{ item.item }}: {{ item.stdout }}"
-      loop: "{{ ssh_test_results.results }}"
-      when: ssh_test_results is defined
-
+    # - name: Test SSH connectivity to all other nodes
+    #   command: ssh -o StrictHostKeyChecking=no -o BatchMode=yes -i /etc/ceph/ceph root@{{ item }} "echo 'SSH connection successful to {{ item }}'"
+    #   loop: "{{ other_hosts }}"
+    #   register: ssh_test_results
+    #   changed_when: false
+    #
+    # - name: Display SSH test results
+    #   debug:
+    #     msg: "SSH test to {{ item.item }}: {{ item.stdout }}"
+    #   loop: "{{ ssh_test_results.results }}"
+    #   when: ssh_test_results is defined
+    #
     - name: Display admin host info
       debug:
         msg: |

@@ -13,6 +13,7 @@ provider "proxmox" {
   pm_api_token_id     = var.pm_api_token_id
   pm_api_token_secret = var.pm_api_token_secret
   pm_tls_insecure     = true
+  pm_parallel = 4
 }
 
 variable "pm_api_token_id" {
@@ -38,6 +39,12 @@ variable "vm_count" {
   type        = number
   default     = 4
 }
+
+variable "proxmox_template" {
+  description = "Name of template in proxmox to copy"
+  type        = string 
+}
+
 
 variable "user_prefix" {
   description = "User prefix for VM names and identification (e.g., 'alice', 'bob')"
@@ -143,7 +150,7 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
   
   name        = local.vm_names[count.index]
   target_node = "pve"
-  clone       = "ceph-test"
+  clone       = var.proxmox_template
   
   cpu {
     cores   = local.selected_config.cores
@@ -159,7 +166,7 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
   
   os_type = "cloud-init"
   sshkeys = var.ssh_public_key
-  ciuser = "debian"
+  ciuser = "debby"
   ipconfig0 = "ip=dhcp"
   agent = 1
   
@@ -167,7 +174,7 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
     scsi {
       scsi0 {
         disk {
-          size    = "100G"
+          size    = "32G"
           storage = "local-lvm"
         }
       }

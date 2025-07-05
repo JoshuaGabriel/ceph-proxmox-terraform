@@ -1,6 +1,6 @@
 ---
 - hosts: cluster_nodes
-  remote_user: debian
+  remote_user: debby 
   become: yes
   tasks:
     - name: Ensure root .ssh directory exists
@@ -13,9 +13,50 @@
 
     - name: Copy SSH keys to root
       copy:
-        src: /home/debian/.ssh/authorized_keys
+        src: /home/debby/.ssh/authorized_keys
         dest: /root/.ssh/authorized_keys
         remote_src: yes
         mode: '0600'
         owner: root
         group: root
+
+# Generate SSH key for admin node root user
+- hosts: "{{ groups['cluster_nodes'][0] }}"
+  remote_user: debby
+  become: yes
+  tasks:
+    - name: Generate SSH key pair for root user on admin node
+      openssh_keypair:
+        path: /root/.ssh/id_rsa
+        type: rsa
+        size: 2048
+        comment: "root@{{ inventory_hostname }}"
+        owner: root
+        group: root
+        mode: '0600'
+      register: admin_ssh_key_result
+
+    - name: Set proper permissions for root public key
+      file:
+        path: /root/.ssh/id_rsa.pub
+        mode: '0644'
+        owner: root
+        group: root
+
+# Distribute admin node root public key to all other nodes
+- hosts: cluster_nodes
+  remote_user: debby
+  become: yes
+  tasks:
+    - name: Get admin node root public key content
+      slurp:
+        src: /root/.ssh/id_rsa.pub
+      register: admin_root_key_content
+      delegate_to: "{{ groups['cluster_nodes'][0] }}"
+
+    - name: Add admin node root key to all nodes (including self for consistency)
+      authorized_key:
+        user: root
+        key: "{{ admin_root_key_content.content | b64decode | trim }}"
+        comment: "root from admin node {{ groups['cluster_nodes'][0] }}"
+        state: present

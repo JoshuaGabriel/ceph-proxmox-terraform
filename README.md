@@ -61,3 +61,15 @@ setup ceph.pub key in hosts
 ansible-playbook -i inventory.ini setup-ceph-ssh.yml
 ```
 
+setup cephadm on all hosts
+```
+ansible-playbook -i inventory.ini setup-cephadm.yml
+```
+
+
+setup docker registry
+```
+ansible-playbook -i inventory.ini setup-docker-registry.yml -e "insecure_registry=10.0.0.225:5000"
+```
+
+
