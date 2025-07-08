@@ -2,19 +2,33 @@ pm_api_token_id     = "puttokenIDinhere"
 pm_api_token_secret = "putapisecretinhere"
 
 
-# use these if you aren't using api token
+# use these if you aren't using api token - TODO: need to configure the main.tf to accept these
 # pm_password = <password>
 # pm_user = myuser@pam or myuser@pve
-
 ssh_public_key      = "sshkey in here"
 vm_count    = 4
-user_prefix = "jblanch" #vm name prefix in proxmox
+disk_count  = 1
+disk_size   = "2T"
+user_prefix = "jblanch"
 vm_profile  = "normal"
 proxmox_template = "ceph-template"
 
 # VM Profiles:
-# standard: 2 cores, 2GB RAM, 1 disk (50GB)
-# TODO: waldb:    4 cores, 4GB RAM, 4 disks (50GB system + 3x500GB data, last one on SSD)
-# normal:   4 cores, 4GB RAM, 4 disks (50GB system + 3x500GB data)
+# standard: 2 cores, 2GB RAM, data disks as configured by disk_count and disk_size
+# waldb:    4 cores, 8GB RAM, data disks as configured by disk_count and disk_size (last disk uses local-ssd)
+# normal:   4 cores, 8GB RAM, data disks as configured by disk_count and disk_size (uses local-lvm, SSD emulation)
+
+# Disk Configuration:
+# - System disk (scsi0): 32GB on local-lvm (automatically created)
+# - Data disks: Number controlled by disk_count, size controlled by disk_size
+# - Standard/Normal: All data disks use local-lvm storage
+# - Waldb: All data disks use local-lvm, except the last one uses local-ssd with SSD emulation
+# 
+# Examples:
+# - disk_count = 1, disk_size = "500G": Creates 1 data disk of 500GB (scsi1)
+# - disk_count = 3, disk_size = "1T": Creates 3 data disks of 1TB each (scsi1, scsi2, scsi3)
+# - disk_count = 5, disk_size = "250G": Creates 5 data disks of 250GB each (scsi1-scsi5)
+# - For waldb profile: The last disk always uses local-ssd storage regardless of disk_count
+
 
 
