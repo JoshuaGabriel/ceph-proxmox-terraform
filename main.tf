@@ -40,11 +40,22 @@ variable "vm_count" {
   default     = 4
 }
 
+variable "disk_count" {
+  description = "Number of data disks to create (excluding system disk)"
+  type        = number
+  default     = 3
+}
+
+variable "disk_size" {
+  description = "Size of each data disk (e.g., '500G', '1T')"
+  type        = string
+  default     = "500G"
+}
+
 variable "proxmox_template" {
   description = "Name of template in proxmox to copy"
   type        = string 
 }
-
 
 variable "user_prefix" {
   description = "User prefix for VM names and identification (e.g., 'alice', 'bob')"
@@ -57,75 +68,32 @@ variable "vm_configs" {
   type = map(object({
     cores  = number
     memory = number
-    disks = list(object({
-      size    = string
-      storage = string
-      type    = string
-    }))
+    disk_storage = string
+    disk_emulatessd = bool
+    # For waldb profile, the last disk can use different storage
+    last_disk_storage = optional(string)
+    last_disk_emulatessd = optional(bool)
   }))
   default = {
     standard = {
       cores  = 2
       memory = 2048
-      disks = [
-        {
-          size    = "50G"
-          storage = "local-lvm"
-          type    = "system"
-        }
-      ]
+      disk_storage = "local-lvm"
+      disk_emulatessd = true
     }
     waldb = {
       cores  = 4
       memory = 8192
-      disks = [
-        {
-          size    = "50G"
-          storage = "local-lvm"
-          type    = "system"
-        },
-        {
-          size    = "500G"
-          storage = "local-lvm"
-          type    = "data"
-        },
-        {
-          size    = "500G"
-          storage = "local-lvm"
-          type    = "data"
-        },
-        {
-          size    = "500G"
-          storage = "local-ssd"
-          type    = "data"
-        }
-      ]
+      disk_storage = "local-lvm"
+      disk_emulatessd = false
+      last_disk_storage = "local-ssd"
+      last_disk_emulatessd = true
     }
     normal = {
       cores  = 4
       memory = 8192
-      disks = [
-        {
-          size    = "50G"
-          storage = "local-lvm"
-          type    = "system"
-        },
-        {
-          size    = "500G"
-          storage = "local-lvm"
-          type    = "data"
-        },
-        {
-          size    = "500G"
-          storage = "local-lvm"
-          type    = "data"
-        },
-        {
-          size    = "500G"
-          storage = "local-lvm"
-          type    = "data"
-        }
-      ]
+      disk_storage = "local-lvm"
+      disk_emulatessd = true
     }
   }
 }
@@ -180,31 +148,56 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
       }
       
       dynamic "scsi1" {
-        for_each = length(local.selected_config.disks) > 1 ? [local.selected_config.disks[1]] : []
+        for_each = var.disk_count >= 1 ? [1] : []
         content {
           disk {
-            size    = scsi1.value.size
-            storage = scsi1.value.storage
+            size    = var.disk_size
+            storage = var.disk_count == 1 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 1 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
           }
         }
       }
       
       dynamic "scsi2" {
-        for_each = length(local.selected_config.disks) > 2 ? [local.selected_config.disks[2]] : []
+        for_each = var.disk_count >= 2 ? [1] : []
         content {
           disk {
-            size    = scsi2.value.size
-            storage = scsi2.value.storage
+            size    = var.disk_size
+            storage = var.disk_count == 2 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 2 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
           }
         }
       }
       
       dynamic "scsi3" {
-        for_each = length(local.selected_config.disks) > 3 ? [local.selected_config.disks[3]] : []
+        for_each = var.disk_count >= 3 ? [1] : []
         content {
           disk {
-            size    = scsi3.value.size
-            storage = scsi3.value.storage
+            size    = var.disk_size
+            storage = var.disk_count == 3 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 3 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi4" {
+        for_each = var.disk_count >= 4 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 4 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 4 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi5" {
+        for_each = var.disk_count >= 5 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 5 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 5 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
           }
         }
       }

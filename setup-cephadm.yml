@@ -3,9 +3,27 @@
   remote_user: root
   vars:
     ceph_release: "19.2.2"
+    ceph_deb_url: "https://download.ceph.com/debian-squid/pool/main/c/ceph/ceph-common_{{ ceph_release }}-1~bpo12%2B1_amd64.deb"
+    ceph_deb_file: "/tmp/ceph-common_{{ ceph_release }}-1~bpo12+1_amd64.deb"
     cephadm_url: "https://download.ceph.com/rpm-{{ ceph_release }}/el9/noarch/cephadm"
   tasks:
-    - name: Download cephadm
+    # - name: Download ceph-common Debian package (admin node only)
+    #   get_url:
+    #     url: "{{ ceph_deb_url }}"
+    #     dest: "{{ ceph_deb_file }}"
+    #     mode: '0644'
+    #     owner: root
+    #     group: root
+    #   when: inventory_hostname == groups['cluster_nodes'][0]
+
+    # - name: Install ceph-common package with apt (admin node only)
+    #   apt:
+    #     deb: "{{ ceph_deb_file }}"
+    #     state: present
+    #     update_cache: yes
+    #   when: inventory_hostname == groups['cluster_nodes'][0]
+
+    - name: Download standalone cephadm binary (all nodes)
       get_url:
         url: "{{ cephadm_url }}"
         dest: /usr/local/bin/cephadm
@@ -13,21 +31,31 @@
         owner: root
         group: root
 
-    - name: Verify cephadm is executable
-      command: /usr/local/bin/cephadm --help
+    - name: Verify package-installed cephadm is available (admin node only)
+      command: cephadm --help
       register: cephadm_help
       changed_when: false
+      when: inventory_hostname == groups['cluster_nodes'][0]
 
-    - name: Display cephadm version info
-      debug:
-        msg: "cephadm downloaded successfully on {{ inventory_hostname }}"
-
-    - name: Show cephadm location
-      command: which cephadm
-      register: cephadm_location
+    - name: Verify standalone cephadm is executable (all nodes)
+      command: /usr/local/bin/cephadm --help
+      register: cephadm_standalone_help
       changed_when: false
-      failed_when: false
 
-    - name: Display cephadm location
+    - name: Display installation success (admin node)
       debug:
-        msg: "cephadm location: {{ cephadm_location.stdout if cephadm_location.rc == 0 else '/usr/local/bin/cephadm' }}"
+        msg: "Both ceph-common package and standalone cephadm installed successfully on admin node {{ inventory_hostname }}"
+      when: inventory_hostname == groups['cluster_nodes'][0]
+
+    - name: Display installation success (other nodes)
+      debug:
+        msg: "Standalone cephadm installed successfully on {{ inventory_hostname }}"
+      when: inventory_hostname != groups['cluster_nodes'][0]
+
+    - name: Show cephadm locations (admin node)
+      shell: |
+        echo "Package cephadm: $(which cephadm)"
+        echo "Standalone cephadm: /usr/local/bin/cephadm"
+      register: cephadm_locations_admin
+      changed_when: false
+      when: inventory_hostname == groups['cluster_nodes'][0]

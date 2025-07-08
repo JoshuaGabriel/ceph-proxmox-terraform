@@ -32,4 +32,21 @@
 
     - name: Show host.yml content
       debug:
-        msg: "{{ host_entries }}" 
+        msg: "{{ host_entries }}"
+
+    - name: Bootstrap Ceph cluster with cephadm
+      command: >
+        cephadm bootstrap
+        --apply-spec /root/host.yml
+        --ssh-private-key /etc/ceph/ceph
+        --ssh-public-key /etc/ceph/ceph.pub
+        --initial-dashboard-password admin
+        --initial-dashboard-user admin
+        --mon-ip {{ ansible_host }}
+        --allow-overwrite
+      register: bootstrap_result
+      changed_when: true
+
+    - name: Display bootstrap results
+      debug:
+        msg: "{{ bootstrap_result.stdout_lines }}" 
