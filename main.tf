@@ -147,57 +147,13 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
         }
       }
       
-      dynamic "scsi1" {
-        for_each = var.disk_count >= 1 ? [1] : []
+      dynamic "scsi" {
+        for_each = range(1, var.disk_count + 1)
         content {
           disk {
             size    = var.disk_size
-            storage = var.disk_count == 1 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
-            emulatessd = var.disk_count == 1 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
-          }
-        }
-      }
-      
-      dynamic "scsi2" {
-        for_each = var.disk_count >= 2 ? [1] : []
-        content {
-          disk {
-            size    = var.disk_size
-            storage = var.disk_count == 2 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
-            emulatessd = var.disk_count == 2 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
-          }
-        }
-      }
-      
-      dynamic "scsi3" {
-        for_each = var.disk_count >= 3 ? [1] : []
-        content {
-          disk {
-            size    = var.disk_size
-            storage = var.disk_count == 3 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
-            emulatessd = var.disk_count == 3 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
-          }
-        }
-      }
-
-      dynamic "scsi4" {
-        for_each = var.disk_count >= 4 ? [1] : []
-        content {
-          disk {
-            size    = var.disk_size
-            storage = var.disk_count == 4 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
-            emulatessd = var.disk_count == 4 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
-          }
-        }
-      }
-
-      dynamic "scsi5" {
-        for_each = var.disk_count >= 5 ? [1] : []
-        content {
-          disk {
-            size    = var.disk_size
-            storage = var.disk_count == 5 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
-            emulatessd = var.disk_count == 5 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+            storage = scsi.value == var.disk_count && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = scsi.value == var.disk_count && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
           }
         }
       }
