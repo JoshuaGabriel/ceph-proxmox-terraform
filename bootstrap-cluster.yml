@@ -36,7 +36,7 @@
 
     - name: Bootstrap Ceph cluster with cephadm
       command: >
-        cephadm bootstrap
+        cephadm --image {{ ceph_image }} bootstrap
         --apply-spec /root/host.yml
         --ssh-private-key /etc/ceph/ceph
         --ssh-public-key /etc/ceph/ceph.pub
@@ -44,9 +44,15 @@
         --initial-dashboard-user admin
         --mon-ip {{ ansible_host }}
         --allow-overwrite
+        --skip-monitoring-stack
       register: bootstrap_result
       changed_when: true
 
     - name: Display bootstrap results
       debug:
         msg: "{{ bootstrap_result.stdout_lines }}" 
+
+    - name: apply OSDs
+      command: >
+        cephadm shell -- ceph orch apply osd --all-available-devices
+      changed_when: true

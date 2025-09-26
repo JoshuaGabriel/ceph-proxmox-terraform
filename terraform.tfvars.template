@@ -1,5 +1,6 @@
-pm_api_token_id     = "puttokenIDinhere"
+pm_api_token_id     = "puttokenIDinhere" # # root@pam is the name of my system, 'test' is the name of the token name this should look like root@pam!test 
 pm_api_token_secret = "putapisecretinhere"
+proxmox_ip = "iphere"
 
 
 # use these if you aren't using api token - TODO: need to configure the main.tf to accept these

@@ -8,15 +8,22 @@ terraform {
   }
 }
 
+
 provider "proxmox" {
-  pm_api_url          = "https://10.0.0.19:8006/api2/json"
   pm_api_token_id     = var.pm_api_token_id
+  pm_api_url          = var.proxmox_ip
   pm_api_token_secret = var.pm_api_token_secret
   pm_tls_insecure     = true
   pm_parallel = 4
 }
 
 variable "pm_api_token_id" {
+  description = "Proxmox API token ID (format: user@realm!token-name)"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_ip" {
   description = "Proxmox API token ID (format: user@realm!token-name)"
   type        = string
   sensitive   = true
@@ -147,17 +154,171 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
         }
       }
       
-      dynamic "scsi" {
-        for_each = range(1, var.disk_count + 1)
+      dynamic "scsi1" {
+        for_each = var.disk_count >= 1 ? [1] : []
         content {
           disk {
             size    = var.disk_size
-            storage = scsi.value == var.disk_count && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
-            emulatessd = scsi.value == var.disk_count && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+            storage = var.disk_count == 1 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 1 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
           }
         }
       }
-    }
+      
+      dynamic "scsi2" {
+        for_each = var.disk_count >= 2 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 2 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 2 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+      
+      dynamic "scsi3" {
+        for_each = var.disk_count >= 3 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 3 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 3 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi4" {
+        for_each = var.disk_count >= 4 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 4 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 4 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi5" {
+        for_each = var.disk_count >= 5 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 5 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 5 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi6" {
+        for_each = var.disk_count >= 6 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 6 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 6 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi7" {
+        for_each = var.disk_count >= 7 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 7 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 7 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi8" {
+        for_each = var.disk_count >= 8 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 8 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 8 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi9" {
+        for_each = var.disk_count >= 9 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 9 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 9 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi10" {
+        for_each = var.disk_count >= 10 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 10 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 10 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi11" {
+        for_each = var.disk_count >= 11 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 11 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 11 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi12" {
+        for_each = var.disk_count >= 12 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 12 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 12 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi13" {
+        for_each = var.disk_count >= 13 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 13 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 13 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi14" {
+        for_each = var.disk_count >= 14 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 14 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 14 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+
+      dynamic "scsi15" {
+        for_each = var.disk_count >= 15 ? [1] : []
+        content {
+          disk {
+            size    = var.disk_size
+            storage = var.disk_count == 15 && local.selected_config.last_disk_storage != null ? local.selected_config.last_disk_storage : local.selected_config.disk_storage
+            emulatessd = var.disk_count == 15 && local.selected_config.last_disk_emulatessd != null ? local.selected_config.last_disk_emulatessd : local.selected_config.disk_emulatessd
+          }
+        }
+      }
+    }    
     ide {
       ide3 {
         cloudinit {
@@ -165,8 +326,7 @@ resource "proxmox_vm_qemu" "cluster_nodes" {
         }
       }
     }
-  }
-  
+  }  
   boot = "order=scsi0"
   scsihw = "virtio-scsi-single"
   bios = "ovmf"

@@ -2,7 +2,6 @@
 - hosts: cluster_nodes
   remote_user: root
   vars:
-    ceph_release: "19.2.2"
     ceph_deb_url: "https://download.ceph.com/debian-squid/pool/main/c/ceph/ceph-common_{{ ceph_release }}-1~bpo12%2B1_amd64.deb"
     ceph_deb_file: "/tmp/ceph-common_{{ ceph_release }}-1~bpo12+1_amd64.deb"
     cephadm_url: "https://download.ceph.com/rpm-{{ ceph_release }}/el9/noarch/cephadm"
